@@ -12,13 +12,14 @@ spec:
         revision: HEAD
         directories:
           # Helm apps
-          - path: apps/*/*
+          - path: apps/*/chart
+          - path: apps/*/overlays/prod
           # - path: apps/*/chart
           # Kustomize overlays (prod only)
           # - path: apps/*/overlays/prod
   template:
     metadata:
-      name: '{{index .path.segments 1}}--{{.path.basename}}'
+      name: '{{index .path.segments 1}}-{{.path.basename}}'
     spec:
       project: default
       source:
