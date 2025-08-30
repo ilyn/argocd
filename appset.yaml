@@ -1,35 +1,34 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
-namespace: argocd
 metadata:
   name: prod-apps
+  namespace: argocd
 spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
   generators:
     - git:
         repoURL: https://github.com/ilyn/argocd.git
-        revision: main
+        revision: HEAD
         directories:
           # Helm apps
-          - path: apps/* 
-          - path: apps/*/chart
+          - path: apps/*/*
+          # - path: apps/*/chart
           # Kustomize overlays (prod only)
-          - path: apps/*/overlays/prod
+          # - path: apps/*/overlays/prod
   template:
     metadata:
-      name: '{{index path.segments 1}}-{{path.basename}}-prod'
+      name: '{{index .path.segments 1}}--{{.path.basename}}'
     spec:
       project: default
       source:
         repoURL: https://github.com/ilyn/argocd.git
-        targetRevision: main
-        path: '{{path}}'
-        helm:
-          valueFiles:
-            - values.yaml
-            - values-prod.yaml
+        targetRevision: HEAD
+        path: '{{.path.path}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{index path.segments 1}}'
+        namespace: '{{index .path.segments 1}}'
       syncPolicy:
         syncOptions:
+        - ServerSideApply=true
         - CreateNamespace=true
