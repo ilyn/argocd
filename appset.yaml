@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+namespace: argocd
+metadata:
+  name: prod-apps
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/ilyn/argocd.git
+        revision: main
+        directories:
+          # Helm apps
+          - path: apps/* 
+          - path: apps/*/chart
+          # Kustomize overlays (prod only)
+          - path: apps/*/overlays/prod
+  template:
+    metadata:
+      name: '{{index path.segments 1}}-{{path.basename}}-prod'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/ilyn/argocd.git
+        targetRevision: main
+        path: '{{path}}'
+        helm:
+          valueFiles:
+            - values.yaml
+            - values-prod.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{index path.segments 1}}'
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true
